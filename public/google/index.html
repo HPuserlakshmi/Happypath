@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset='utf-8' />
+	<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+</head>
+
+<body>
+	<button class="getGmailContact" id="myBtnId">Get My Gmail Contacts</button>
+	<select id="sel" onchange="show(this)">
+		<option value="">-- Select --</option>
+	</select>
+	<br>
+	<br>
+	<p>
+		<input type="button" style="margin:10px 0;" onclick="populateSelect()" value="Click to Populate SELECT with JSON" /> </p>
+	<script type="text/javascript">
+	// Developed By: Binit Mishra.
+	var clientId = '251428165980-oicqgg4nmfdbk725haqffie5r1g50fig.apps.googleusercontent.com';
+	var apiKey = 'AIzaSyAleBqPMC6yV4vbQHfdtm2TuDEss6SE-o4';
+	var scopes = 'https://www.googleapis.com/auth/contacts.readonly';
+	var alldata = [];
+	$(document).on("click", ".getGmailContact", function() {
+		gapi.client.setApiKey(apiKey);
+		window.setTimeout(authorize);
+	});
+
+	function authorize() {
+		gapi.auth.authorize({
+			client_id: clientId,
+			scope: scopes,
+			immediate: false
+		}, handleAuthorization);
+	}
+	// console.log("Print this first line...");
+	function handleAuthorization(authorizationResult) {
+		if(authorizationResult && !authorizationResult.error) {
+			$.get("https://www.google.com/m8/feeds/contacts/default/thin?alt=json&access_token=" + authorizationResult.access_token + "&max-results=500&v=3.0", function(response) {
+				var entries = response.feed.entry;
+				var contacts = [];
+				for(var i = 0; i < entries.length; i++) {
+					var contactEntry = entries[i];
+					var contact = [];
+					if(typeof(contactEntry.gd$name) != "undefined") {
+						if(typeof(contactEntry.gd$name.gd$fullName) != "undefined") {
+							if(typeof(contactEntry.gd$name.gd$fullName.$t) != "undefined") {
+								contact['name'] = contactEntry.gd$name.gd$fullName.$t;
+							}
+						}
+					}
+					if(typeof(contactEntry['gd$phoneNumber']) != "undefined") {
+						var phoneNumber = contactEntry['gd$phoneNumber'];
+						for(var j = 0; j < phoneNumber.length; j++) {
+							if(typeof(phoneNumber[j]['$t']) != "undefined") {
+								var phone = phoneNumber[j]['$t'];
+								contact['phone'] = phone;
+							}
+						}
+					}
+					if(typeof(contactEntry['gd$email']) != "undefined") {
+						var emailAddresses = contactEntry['gd$email'];
+						for(var j = 0; j < emailAddresses.length; j++) {
+							if(typeof(emailAddresses[j]['address']) != "undefined") {
+								var emailAddress = emailAddresses[j]['address'];
+								contact['email'] = emailAddress;
+							}
+						}
+					}
+					contacts.push(contact);
+				}
+				//console.log(contacts);
+				alldata = contacts;
+				console.log(alldata);
+			});
+		}
+	}
+
+	function populateSelect() {
+		// THE JSON ARRAY.
+		var birds = alldata;
+		console.log(birds);
+		var ele = document.getElementById('sel');
+		for(var i = 0; i < birds.length; i++) {
+			// POPULATE SELECT ELEMENT WITH JSON.
+			ele.innerHTML = ele.innerHTML + '<option value="' + birds[i]['name'] + '">' + birds[i]['email'] + '</option>';
+		}
+	}
+
+	function show(ele) {
+		// GET THE SELECTED VALUE FROM <select> ELEMENT AND SHOW IT.
+		var msg = document.getElementById('msg');
+		msg.innerHTML = 'Selected Bird: <b>' + ele.options[ele.selectedIndex].text + '</b> </br>' + 'ID: <b>' + ele.value + '</b>';
+	}
+	</script>
+	<script src="https://apis.google.com/js/client.js"></script>
+</body>
+
+</html>
